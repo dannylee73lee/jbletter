@@ -1,10 +1,11 @@
 import streamlit as st
 from openai import OpenAI
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import base64
 import os
 import re
+import requests
 
 def convert_markdown_to_html(text):
     """마크다운 텍스트를 HTML로 변환합니다."""
@@ -42,11 +43,38 @@ def convert_markdown_to_html(text):
     
     return ''.join(paragraphs)
 
-def generate_newsletter(api_key, custom_success_story=None, issue_num=1, highlight_settings=None):
-    os.environ["OPENAI_API_KEY"] = api_key  # API 키 설정
+def fetch_real_time_news(api_key, query="AI digital transformation", days=30, language="en"):
+    """
+    NewsAPI를 사용하여 실시간 뉴스를 가져옵니다.
+    """
+    # 날짜 범위 계산
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
     
-    # 클라이언트 초기화
-    client = OpenAI(api_key=api_key)
+    # NewsAPI 요청
+    url = "https://newsapi.org/v2/everything"
+    params = {
+        'q': query,
+        'from': start_date.strftime('%Y-%m-%d'),
+        'to': end_date.strftime('%Y-%m-%d'),
+        'sortBy': 'publishedAt',
+        'language': language,
+        'apiKey': api_key
+    }
+    
+    response = requests.get(url, params=params)
+    
+    if response.status_code == 200:
+        news_data = response.json()
+        return news_data['articles']
+    else:
+        raise Exception(f"뉴스 가져오기 실패: {response.status_code} - {response.text}")
+
+def generate_newsletter(openai_api_key, news_api_key, news_query, language="en", custom_success_story=None, issue_num=1, highlight_settings=None):
+    os.environ["OPENAI_API_KEY"] = openai_api_key  # OpenAI API 키 설정
+    
+    # OpenAI 클라이언트 초기화
+    client = OpenAI(api_key=openai_api_key)
     
     date = datetime.now().strftime('%Y년 %m월 %d일')
     issue_number = issue_num
@@ -54,45 +82,53 @@ def generate_newsletter(api_key, custom_success_story=None, issue_num=1, highlig
     # 하이라이트 설정 기본값
     if highlight_settings is None:
         highlight_settings = {
-            "title": "중부Infra AT/DT 뉴스레터 개시",
+            "title": "지피터스 AI 스터디 15기 오픈",
             "subtitle": "AI, 어떻게 시작할지 막막하다면?",
-            "link_text": "AT/DT 추진방향 →",
+            "link_text": "알려버스 신청하기 →",
             "link_url": "#"
         }
+    
+    # 실시간 뉴스 가져오기
+    news_info = ""
+    try:
+        news_articles = fetch_real_time_news(news_api_key, query=news_query, days=30, language=language)
+        # 상위 5개 뉴스 선택
+        top_news = news_articles[:5]
+        
+        # GPT-4에 전달할 뉴스 정보 준비
+        news_info = "최근 한달 내 수집된 실제 뉴스 기사:\n\n"
+        for i, article in enumerate(top_news):
+            # 날짜 포맷 변환
+            pub_date = datetime.fromisoformat(article['publishedAt'].replace('Z', '+00:00')).strftime('%Y년 %m월 %d일')
+            news_info += f"{i+1}. 제목: {article['title']}\n"
+            news_info += f"   날짜: {pub_date}\n"
+            news_info += f"   요약: {article['description']}\n"
+            news_info += f"   출처: {article['source']['name']}\n"
+            news_info += f"   URL: {article['url']}\n\n"
+    except Exception as e:
+        news_info = f"실시간 뉴스를 가져오는 중 오류가 발생했습니다: {str(e)}"
+        st.error(f"뉴스 API 오류: {str(e)}")
     
     prompts = {
         'main_news': f"""
         AIDT Weekly 뉴스레터의 '주요 소식' 섹션을 생성해주세요.
-        오늘 날짜는 {date}입니다. {date}로부터 정확히 한 달 전부터 {date}까지의 기간에 발생한 최신 소식만 다루어 주세요.
-        형식:
+        오늘 날짜는 {date}입니다. 아래는 최근 한 달 이내의 실제 뉴스 기사입니다:
+        
+        {news_info}
+        
+        위 뉴스 기사 중 가장 중요하고 관련성 높은 3가지 주요 소식을 선택하여 다음 형식으로 작성해주세요:
         
         ## [주제]의 [핵심 강점/특징]은 [주목할만합니다/확인됐습니다/중요합니다].
         
         간략한 내용을 1-2문장으로 작성하세요. 내용은 특정 기술이나 서비스, 기업의 최신 소식을 다루고, 
         핵심 내용만 포함해주세요. 그리고 왜 중요한지를 강조해주세요.
         
-        구체적인 수치나 인용구가 있다면 추가해주세요. 예를 들어 "이에 관련하여 [전문가 이름]은 [의견/평가]라고 이야기 합니다."
-        
-        마지막에는 추가 정보를 볼 수 있는 곳을 링크와 함께 언급해주세요. 예: "[출처 제목](출처 URL)에서 전체 내용을 확인할 수 있습니다."
-        
-        ## [두 번째 주제]의 [핵심 강점/특징]은 [주목할만합니다/확인됐습니다].
-        
-        간략한 내용을 1-2문장으로 작성하세요. 내용은 특정 기술이나 서비스, 기업의 최신 소식을 다루고, 
-        핵심 내용만 포함해주세요. 그리고 왜 중요한지를 강조해주세요.
-        
         구체적인 수치나 인용구가 있다면 추가해주세요.
         
-        각 소식의 마지막에는 출처를 반드시 "[출처 제목](출처 URL)" 형식으로 포함하세요.
+        각 소식의 마지막에는 뉴스 기사의 발행일과 출처를 반드시 "[출처 제목](출처 URL)" 형식으로 포함하세요.
         
-        ## [세 번째 주제]가 [중요한 이벤트/변화]를 준비/출시합니다.
-        
-        간략한 내용을 1-2문장으로 작성하세요. 기술이나 서비스의 출시 예정일이나 영향력을 언급하세요.
+        모든 주제는 반드시 제공된 실제 뉴스 기사에서만 추출해야 합니다. 가상의 정보나 사실이 아닌 내용은 절대 포함하지 마세요.
         각 소식 사이에 충분한 공백을 두어 가독성을 높여주세요.
-        
-        모든 주제는 반드시 {date}로부터 한 달 전 이후에 발생한 실제 소식이어야 합니다. 그 이전의 소식이나 가상의 정보는 절대 포함하지 마세요.
-        정확한 출처와 실제 발생한 소식만 포함해야 합니다. 모든 소식에는 반드시 원본 출처 링크를 마크다운 형식 [제목](URL)으로 제공하세요.
-        
-        소식의 발생 시점을 명확히 표시하여 한 달 이내의 소식임을 확인할 수 있도록 해주세요.
         """,
         'aidt_tips': """
         AIDT Weekly 뉴스레터의 'AI 활용 팁' 섹션을 생성해주세요.
@@ -374,31 +410,50 @@ def create_download_link(html_content, filename):
     return href
 
 def main():
-    st.title("중부Infra AT/DT 뉴스레터 생성기")
-    st.write("GPT-4를 활용하여 AI 디지털 트랜스포메이션 관련 뉴스레터를 자동으로 생성합니다.")
+    st.title("AIDT 뉴스레터 생성기")
+    st.write("GPT-4와 실시간 뉴스 API를 활용하여 AI 디지털 트랜스포메이션 관련 뉴스레터를 자동으로 생성합니다.")
     
-    # OpenAI API 키 입력
-    api_key = st.text_input("OpenAI API 키 입력", type="password")
+    # API 키 입력
+    with st.expander("API 키 설정", expanded=True):
+        st.info("NewsAPI.org에서 API 키를 발급받을 수 있습니다. (https://newsapi.org)")
+        openai_api_key = st.text_input("OpenAI API 키 입력", type="password")
+        news_api_key = st.text_input("News API 키 입력", type="password")
     
-    # 호수 입력
-    issue_number = st.number_input("뉴스레터 호수", min_value=1, value=1, step=1)
+    # 뉴스레터 기본 설정
+    with st.expander("뉴스레터 기본 설정", expanded=True):
+        issue_number = st.number_input("뉴스레터 호수", min_value=1, value=1, step=1)
+        
+        # 뉴스 검색 설정
+        news_query = st.text_input(
+            "뉴스 검색어", 
+            value="AI digital transformation OR artificial intelligence OR machine learning",
+            help="뉴스 API 검색어를 입력하세요. OR, AND 등의 연산자를 사용할 수 있습니다."
+        )
+        
+        language = st.selectbox(
+            "뉴스 언어", 
+            options=["en", "ko", "ja", "zh", "fr", "de"],
+            format_func=lambda x: {"en": "영어", "ko": "한국어", "ja": "일본어", "zh": "중국어", "fr": "프랑스어", "de": "독일어"}[x],
+            help="뉴스 검색 결과의 언어를 선택하세요."
+        )
     
-    # 하이라이트 박스 내용 입력
-    st.subheader("하이라이트 박스 설정")
-    highlight_title = st.text_input("하이라이트 제목", value="중부Infra AT/DT 뉴스레터 개시")
-    highlight_subtitle = st.text_input("하이라이트 부제목", value="AI, 어떻게 시작할지 막막하다면?")
-    highlight_link_text = st.text_input("링크 텍스트", value="AT/DT 추진방향 →")
-    highlight_link_url = st.text_input("링크 URL", value="#")
+    # 하이라이트 박스 설정
+    with st.expander("하이라이트 박스 설정"):
+        highlight_title = st.text_input("하이라이트 제목", value="지피터스 AI 스터디 15기 오픈")
+        highlight_subtitle = st.text_input("하이라이트 부제목", value="AI, 어떻게 시작할지 막막하다면?")
+        highlight_link_text = st.text_input("링크 텍스트", value="알려버스 신청하기 →")
+        highlight_link_url = st.text_input("링크 URL", value="#")
     
     # 성공 사례 사용자 입력 옵션
-    use_custom_success = st.checkbox("성공 사례를 직접 입력하시겠습니까?")
-    
-    custom_success_story = None
-    if use_custom_success:
-        st.write("아래에 성공 사례를 마크다운 형식으로 입력하세요. 한국 기업과 외국 기업 사례 각 1개씩 포함해주세요.")
-        st.write("각 사례는 3개의 단락으로 구성하고, 단락당 3-4줄로 작성해주세요.")
-        st.write("예시 형식:")
-        st.code("""
+    with st.expander("성공 사례 직접 입력"):
+        use_custom_success = st.checkbox("성공 사례를 직접 입력하시겠습니까?")
+        
+        custom_success_story = None
+        if use_custom_success:
+            st.write("아래에 성공 사례를 마크다운 형식으로 입력하세요. 한국 기업과 외국 기업 사례 각 1개씩 포함해주세요.")
+            st.write("각 사례는 3개의 단락으로 구성하고, 단락당 3-4줄로 작성해주세요.")
+            st.write("예시 형식:")
+            st.code("""
 ## 삼성전자의 AI 혁신 사례
 
 첫 번째 단락 내용을 여기에 작성하세요. 3-4줄로 구성하세요.
@@ -414,13 +469,14 @@ def main():
 두 번째 단락 내용을 여기에 작성하세요. 3-4줄로 구성하세요.
 
 세 번째 단락 내용을 여기에 작성하세요. 3-4줄로 구성하세요.
-        """)
-        
-        custom_success_story = st.text_area("성공 사례 직접 입력", height=400)
+            """)
+            
+            custom_success_story = st.text_area("성공 사례 직접 입력", height=400)
     
+    # 뉴스레터 생성 버튼
     if st.button("뉴스레터 생성"):
-        if not api_key:
-            st.error("API 키를 입력하세요.")
+        if not openai_api_key or not news_api_key:
+            st.error("OpenAI API 키와 News API 키를 모두 입력하세요.")
         else:
             with st.spinner("뉴스레터 생성 중... (약 1-2분 소요될 수 있습니다)"):
                 try:
@@ -433,7 +489,10 @@ def main():
                     }
                     
                     html_content = generate_newsletter(
-                        api_key, 
+                        openai_api_key, 
+                        news_api_key,
+                        news_query,
+                        language,
                         custom_success_story if use_custom_success else None, 
                         issue_number,
                         highlight_settings
