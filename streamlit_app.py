@@ -383,9 +383,9 @@ def main():
     
     # 하이라이트 박스 내용 입력
     st.subheader("하이라이트 박스 설정")
-    highlight_title = st.text_input("하이라이트 제목", value="지피터스 AI 스터디 15기 오픈")
+    highlight_title = st.text_input("하이라이트 제목", value="중부Infra AT/DT 뉴스레터 개시")
     highlight_subtitle = st.text_input("하이라이트 부제목", value="AI, 어떻게 시작할지 막막하다면?")
-    highlight_link_text = st.text_input("링크 텍스트", value="알려버스 신청하기 →")
+    highlight_link_text = st.text_input("링크 텍스트", value="AT/DT 추진방향 →")
     highlight_link_url = st.text_input("링크 URL", value="#")
     
     # 성공 사례 사용자 입력 옵션
