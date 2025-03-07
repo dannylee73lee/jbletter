@@ -43,13 +43,15 @@ def convert_markdown_to_html(text):
     
     return ''.join(paragraphs)
 
-def fetch_real_time_news(api_key, query="AI digital transformation", days=30, language="en"):
+def fetch_real_time_news(api_key, query="AI digital transformation", days=7, language="en"):
     """
     NewsAPI를 사용하여 실시간 뉴스를 가져옵니다.
+    무료 플랜은 최근 1개월(실제로는 더 짧을 수 있음) 데이터만 접근 가능합니다.
     """
-    # 날짜 범위 계산
+    # 날짜 범위 계산 (API 제한으로 인해 기간을 줄임)
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+    # 무료 플랜 제한을 고려하여 기간을 줄임
+    start_date = end_date - timedelta(days=min(days, 7))  # 최대 7일로 제한
     
     # NewsAPI 요청
     url = "https://newsapi.org/v2/everything"
@@ -82,21 +84,22 @@ def generate_newsletter(openai_api_key, news_api_key, news_query, language="en",
     # 하이라이트 설정 기본값
     if highlight_settings is None:
         highlight_settings = {
-            "title": "지피터스 AI 스터디 15기 오픈",
+            "title": "중부Infra AT/DT 뉴스레터 개시",
             "subtitle": "AI, 어떻게 시작할지 막막하다면?",
-            "link_text": "알려버스 신청하기 →",
+            "link_text": "AT/DT 추진방향 →",
             "link_url": "#"
         }
     
     # 실시간 뉴스 가져오기
     news_info = ""
     try:
-        news_articles = fetch_real_time_news(news_api_key, query=news_query, days=30, language=language)
+        # 무료 플랜은 최근 1주일 정도의 데이터만 접근 가능하므로 days=7로 설정
+        news_articles = fetch_real_time_news(news_api_key, query=news_query, days=7, language=language)
         # 상위 5개 뉴스 선택
         top_news = news_articles[:5]
         
         # GPT-4에 전달할 뉴스 정보 준비
-        news_info = "최근 한달 내 수집된 실제 뉴스 기사:\n\n"
+        news_info = "최근 7일 내 수집된 실제 뉴스 기사:\n\n"
         for i, article in enumerate(top_news):
             # 날짜 포맷 변환
             pub_date = datetime.fromisoformat(article['publishedAt'].replace('Z', '+00:00')).strftime('%Y년 %m월 %d일')
@@ -112,7 +115,7 @@ def generate_newsletter(openai_api_key, news_api_key, news_query, language="en",
     prompts = {
         'main_news': f"""
         AIDT Weekly 뉴스레터의 '주요 소식' 섹션을 생성해주세요.
-        오늘 날짜는 {date}입니다. 아래는 최근 한 달 이내의 실제 뉴스 기사입니다:
+        오늘 날짜는 {date}입니다. 아래는 최근 7일 이내의 실제 뉴스 기사입니다:
         
         {news_info}
         
@@ -430,6 +433,8 @@ def main():
             help="뉴스 API 검색어를 입력하세요. OR, AND 등의 연산자를 사용할 수 있습니다."
         )
         
+        st.info("⚠️ 참고: NewsAPI 무료 플랜은 약 7일 이내의 최신 뉴스만 조회할 수 있습니다. 더 오래된 뉴스를 조회하려면 유료 플랜으로 업그레이드해야 합니다.")
+        
         language = st.selectbox(
             "뉴스 언어", 
             options=["en", "ko", "ja", "zh", "fr", "de"],
@@ -439,9 +444,9 @@ def main():
     
     # 하이라이트 박스 설정
     with st.expander("하이라이트 박스 설정"):
-        highlight_title = st.text_input("하이라이트 제목", value="지피터스 AI 스터디 15기 오픈")
+        highlight_title = st.text_input("하이라이트 제목", value="중부Infra AT/DT 뉴스레터 개시")
         highlight_subtitle = st.text_input("하이라이트 부제목", value="AI, 어떻게 시작할지 막막하다면?")
-        highlight_link_text = st.text_input("링크 텍스트", value="알려버스 신청하기 →")
+        highlight_link_text = st.text_input("링크 텍스트", value="AT/DT 추진방향 →")
         highlight_link_url = st.text_input("링크 URL", value="#")
     
     # 성공 사례 사용자 입력 옵션
