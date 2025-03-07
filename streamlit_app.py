@@ -54,9 +54,9 @@ def generate_newsletter(api_key, custom_success_story=None, issue_num=1, highlig
     # 하이라이트 설정 기본값
     if highlight_settings is None:
         highlight_settings = {
-            "title": "지피터스 AI 스터디 15기 오픈",
+            "title": "중부Infra AT/DT 뉴스레터 개시",
             "subtitle": "AI, 어떻게 시작할지 막막하다면?",
-            "link_text": "알려버스 신청하기 →",
+            "link_text": "AT/DT 추진방향 →",
             "link_url": "#"
         }
     
