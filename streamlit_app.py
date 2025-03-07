@@ -42,14 +42,14 @@ def convert_markdown_to_html(text):
     
     return ''.join(paragraphs)
 
-def generate_newsletter(api_key, custom_success_story=None):
+def generate_newsletter(api_key, custom_success_story=None, issue_num=1):
     os.environ["OPENAI_API_KEY"] = api_key  # API 키 설정
     
     # 클라이언트 초기화
     client = OpenAI(api_key=api_key)
     
     date = datetime.now().strftime('%Y년 %m월 %d일')
-    issue_number = 1
+    issue_number = issue_num
     
     prompts = {
         'main_news': f"""
@@ -366,6 +366,9 @@ def main():
     # OpenAI API 키 입력
     api_key = st.text_input("OpenAI API 키 입력", type="password")
     
+    # 호수 입력
+    issue_number = st.number_input("뉴스레터 호수", min_value=1, value=1, step=1)
+    
     # 성공 사례 사용자 입력 옵션
     use_custom_success = st.checkbox("성공 사례를 직접 입력하시겠습니까?")
     
@@ -400,7 +403,7 @@ def main():
         else:
             with st.spinner("뉴스레터 생성 중... (약 1-2분 소요될 수 있습니다)"):
                 try:
-                    html_content = generate_newsletter(api_key, custom_success_story if use_custom_success else None)
+                    html_content = generate_newsletter(api_key, custom_success_story if use_custom_success else None, issue_number)
                     filename = f"중부 ATDT Weekly-제{issue_number}호.html"
                     
                     st.success("✅ 뉴스레터가 성공적으로 생성되었습니다!")
