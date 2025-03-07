@@ -42,7 +42,7 @@ def convert_markdown_to_html(text):
     
     return ''.join(paragraphs)
 
-def generate_newsletter(api_key, custom_success_story=None, issue_num=1):
+def generate_newsletter(api_key, custom_success_story=None, issue_num=1, highlight_settings=None):
     os.environ["OPENAI_API_KEY"] = api_key  # API 키 설정
     
     # 클라이언트 초기화
@@ -50,6 +50,15 @@ def generate_newsletter(api_key, custom_success_story=None, issue_num=1):
     
     date = datetime.now().strftime('%Y년 %m월 %d일')
     issue_number = issue_num
+    
+    # 하이라이트 설정 기본값
+    if highlight_settings is None:
+        highlight_settings = {
+            "title": "지피터스 AI 스터디 15기 오픈",
+            "subtitle": "AI, 어떻게 시작할지 막막하다면?",
+            "link_text": "알려버스 신청하기 →",
+            "link_url": "#"
+        }
     
     prompts = {
         'main_news': f"""
@@ -302,9 +311,9 @@ def generate_newsletter(api_key, custom_success_story=None, issue_num=1):
                 </div>
                 
                 <div class="highlight-box">
-                    <div class="highlight-title">지피터스 AI 스터디 15기 오픈</div>
-                    <div class="highlight-subtitle">AI, 어떻게 시작할지 막막하다면?</div>
-                    <p style="text-align: right; margin-top: 5px; font-size: 9pt;"><a href="#" style="color: #ff5722;">알려버스 신청하기 →</a></p>
+                    <div class="highlight-title">{highlight_settings['title']}</div>
+                    <div class="highlight-subtitle">{highlight_settings['subtitle']}</div>
+                    <p style="text-align: right; margin-top: 5px; font-size: 9pt;"><a href="{highlight_settings['link_url']}" style="color: #ff5722;">{highlight_settings['link_text']}</a></p>
                 </div>
                 
                 <div class="section">
@@ -369,6 +378,13 @@ def main():
     # 호수 입력
     issue_number = st.number_input("뉴스레터 호수", min_value=1, value=1, step=1)
     
+    # 하이라이트 박스 내용 입력
+    st.subheader("하이라이트 박스 설정")
+    highlight_title = st.text_input("하이라이트 제목", value="지피터스 AI 스터디 15기 오픈")
+    highlight_subtitle = st.text_input("하이라이트 부제목", value="AI, 어떻게 시작할지 막막하다면?")
+    highlight_link_text = st.text_input("링크 텍스트", value="알려버스 신청하기 →")
+    highlight_link_url = st.text_input("링크 URL", value="#")
+    
     # 성공 사례 사용자 입력 옵션
     use_custom_success = st.checkbox("성공 사례를 직접 입력하시겠습니까?")
     
@@ -403,7 +419,20 @@ def main():
         else:
             with st.spinner("뉴스레터 생성 중... (약 1-2분 소요될 수 있습니다)"):
                 try:
-                    html_content = generate_newsletter(api_key, custom_success_story if use_custom_success else None, issue_number)
+                    # 하이라이트 설정 딕셔너리 생성
+                    highlight_settings = {
+                        "title": highlight_title,
+                        "subtitle": highlight_subtitle,
+                        "link_text": highlight_link_text,
+                        "link_url": highlight_link_url
+                    }
+                    
+                    html_content = generate_newsletter(
+                        api_key, 
+                        custom_success_story if use_custom_success else None, 
+                        issue_number,
+                        highlight_settings
+                    )
                     filename = f"중부 ATDT Weekly-제{issue_number}호.html"
                     
                     st.success("✅ 뉴스레터가 성공적으로 생성되었습니다!")
