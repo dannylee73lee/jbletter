@@ -42,14 +42,13 @@ def convert_markdown_to_html(text):
     
     return ''.join(paragraphs)
 
-def generate_newsletter(api_key, custom_success_story=None):
+def generate_newsletter(api_key, issue_number, custom_success_story=None):
     os.environ["OPENAI_API_KEY"] = api_key  # API 키 설정
     
     # 클라이언트 초기화
     client = OpenAI(api_key=api_key)
     
     date = datetime.now().strftime('%Y년 %m월 %d일')
-    issue_number = 1
     
     prompts = {
         'main_news': """
@@ -163,13 +162,16 @@ def generate_newsletter(api_key, custom_success_story=None):
         except Exception as e:
             newsletter_content[section] = f"<p>콘텐츠 생성 오류: {e}</p>"
     
+    # 날짜 형식 업데이트
+    formatted_date = datetime.now().strftime('%Y년 %m월 %d일')
+    
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AIDT Weekly - 제{issue_number}호</title>
+        <title>중부 AT/DT Weekly - 제{issue_number}호</title>
         <style>
             body {{
                 font-family: 'Segoe UI', Arial, sans-serif;
@@ -180,7 +182,7 @@ def generate_newsletter(api_key, custom_success_story=None):
                 background-color: #f9f9f9;
             }}
             .container {{
-                max-width: 600px;
+                max-width: 800px;
                 margin: 0 auto;
                 background-color: #ffffff;
             }}
@@ -188,22 +190,27 @@ def generate_newsletter(api_key, custom_success_story=None):
                 padding: 20px;
             }}
             .header {{
-                background-color: #333333;
-                color: white;
-                padding: 15px 20px;
-                text-align: left;
+                text-align: center;
+                padding: 20px 0;
             }}
             .title {{
-                margin: 0;
-                font-size: 20px;
+                color: #4285f4;
+                font-size: 32px;
                 font-weight: bold;
+                margin: 0;
             }}
-            .issue-date {{
-                margin-top: 5px;
-                font-size: 10pt;
+            .issue-info {{
+                margin-top: 10px;
+                font-size: 16px;
+                color: #333;
+            }}
+            .divider {{
+                height: 1px;
+                background-color: #4285f4;
+                margin: 20px 0;
             }}
             .section {{
-                margin-bottom: 25px;
+                margin-bottom: 30px;
                 border-bottom: 1px solid #eee;
                 padding-bottom: 20px;
             }}
@@ -211,123 +218,111 @@ def generate_newsletter(api_key, custom_success_story=None):
                 border-bottom: none;
             }}
             .section-title {{
-                color: #333333;
-                font-size: 16px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                background-color: #f5f5f5;
-                padding: 8px 10px;
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
             }}
             .section-icon {{
-                margin-right: 8px;
+                margin-right: 10px;
+                font-size: 20px;
             }}
             h2, h3 {{
-                font-size: 14px;
+                font-size: 16px;
                 margin-bottom: 5px;
                 color: #333333;
             }}
             .main-news h2 {{
-                color: #ff5722;
-                font-size: 14px;
+                color: #4285f4;
+                font-size: 16px;
                 margin-top: 15px;
                 margin-bottom: 5px;
-                border-bottom: none;
-                padding-bottom: 0;
             }}
             .main-news a {{
-                color: #ff5722;
+                color: #4285f4;
                 text-decoration: none;
             }}
             .main-news a:hover {{
                 text-decoration: underline;
             }}
             .main-news p, .success-case p, p, li {{
-                font-size: 10pt;
-                margin: 0 0 8px;
+                font-size: 14px;
+                margin: 0 0 10px;
             }}
             ul {{
                 padding-left: 20px;
                 margin-top: 5px;
-                margin-bottom: 8px;
+                margin-bottom: 10px;
             }}
             li {{
-                margin-bottom: 3px;
+                margin-bottom: 5px;
             }}
             .footer {{
                 background-color: #f1f1f1;
-                padding: 10px;
+                padding: 15px;
                 text-align: center;
-                font-size: 9pt;
+                font-size: 12px;
                 color: #666;
             }}
             .section-container {{
                 padding: 0 15px;
-            }}
-            .highlight-box {{
-                background-color: #fff9f5;
-                border: 1px solid #ffe0cc;
-                border-radius: 5px;
-                padding: 15px;
-                margin: 10px 0;
-            }}
-            .highlight-title {{
-                color: #ff5722;
-                font-size: 16px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                text-align: center;
-            }}
-            .highlight-subtitle {{
-                color: #666;
-                font-size: 12px;
-                text-align: center;
-                margin-bottom: 15px;
             }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="title">AI 뉴스</div>
+                <div class="title">중부 AT/DT Weekly</div>
+                <div class="issue-info">제{issue_number}호 | {formatted_date}</div>
             </div>
             
+            <div class="divider"></div>
+            
             <div class="content">
-                <div class="highlight-box">
-                    <div class="highlight-title">지피터스 AI 스터디 15기 오픈</div>
-                    <div class="highlight-subtitle">AI, 어떻게 시작할지 막막하다면?</div>
-                    <p style="text-align: right; margin-top: 5px; font-size: 9pt;"><a href="#" style="color: #ff5722;">알려버스 신청하기 →</a></p>
-                </div>
-                
                 <div class="section">
-                    <div class="section-title">주요 소식</div>
+                    <div class="section-title">
+                        <span class="section-icon">🔔</span>
+                        <h2 style="color: white; margin: 0; font-weight: bold;">주요 소식</h2>
+                    </div>
                     <div class="section-container main-news">
                         {newsletter_content['main_news']}
                     </div>
                 </div>
                 
                 <div class="section">
-                    <div class="section-title">이번 주 AIDT 팁</div>
+                    <div class="section-title">
+                        <span class="section-icon">💡</span>
+                        <h2 style="color: white; margin: 0; font-weight: bold;">이번 주 팁</h2>
+                    </div>
                     <div class="section-container">
                         {newsletter_content['aidt_tips']}
                     </div>
                 </div>
                 
                 <div class="section success-case">
-                    <div class="section-title">성공 사례</div>
+                    <div class="section-title">
+                        <span class="section-icon">🏆</span>
+                        <h2 style="color: white; margin: 0; font-weight: bold;">성공 사례</h2>
+                    </div>
                     <div class="section-container">
                         {newsletter_content['success_story']}
                     </div>
                 </div>
                 
                 <div class="section">
-                    <div class="section-title">다가오는 이벤트</div>
+                    <div class="section-title">
+                        <span class="section-icon">📅</span>
+                        <h2 style="color: white; margin: 0; font-weight: bold;">다가오는 이벤트</h2>
+                    </div>
                     <div class="section-container">
                         {newsletter_content['events']}
                     </div>
                 </div>
                 
                 <div class="section">
-                    <div class="section-title">질문 & 답변</div>
+                    <div class="section-title">
+                        <span class="section-icon">❓</span>
+                        <h2 style="color: white; margin: 0; font-weight: bold;">질문 & 답변</h2>
+                    </div>
                     <div class="section-container">
                         {newsletter_content['qa']}
                     </div>
@@ -335,7 +330,7 @@ def generate_newsletter(api_key, custom_success_story=None):
             </div>
             
             <div class="footer">
-                <p>© {datetime.now().year} AIDT Weekly | 뉴스레터 구독을 감사드립니다.</p>
+                <p>© {datetime.now().year} 중부 AT/DT Weekly | 뉴스레터 구독을 감사드립니다.</p>
                 <p>문의사항이나 제안이 있으시면 언제든지 연락해 주세요.</p>
             </div>
         </div>
@@ -347,15 +342,18 @@ def generate_newsletter(api_key, custom_success_story=None):
 def create_download_link(html_content, filename):
     """HTML 콘텐츠를 다운로드할 수 있는 링크를 생성합니다."""
     b64 = base64.b64encode(html_content.encode()).decode()
-    href = f'<a href="data:text/html;base64,{b64}" download="{filename}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #ff5722; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">뉴스레터 다운로드</a>'
+    href = f'<a href="data:text/html;base64,{b64}" download="{filename}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #4285f4; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">뉴스레터 다운로드</a>'
     return href
 
 def main():
-    st.title("AIDT 뉴스레터 생성기")
-    st.write("GPT-4를 활용하여 AI 디지털 트랜스포메이션 관련 뉴스레터를 자동으로 생성합니다.")
+    st.title("중부 AT/DT Weekly 뉴스레터 생성기")
+    st.write("GPT-4를 활용하여 디지털 트랜스포메이션 관련 뉴스레터를 자동으로 생성합니다.")
     
     # OpenAI API 키 입력
     api_key = st.text_input("OpenAI API 키 입력", type="password")
+    
+    # 호수 입력
+    issue_number = st.number_input("뉴스레터 호수", min_value=1, value=1, step=1)
     
     # 성공 사례 사용자 입력 옵션
     use_custom_success = st.checkbox("성공 사례를 직접 입력하시겠습니까?")
@@ -391,13 +389,13 @@ def main():
         else:
             with st.spinner("뉴스레터 생성 중... (약 1-2분 소요될 수 있습니다)"):
                 try:
-                    html_content = generate_newsletter(api_key, custom_success_story if use_custom_success else None)
-                    filename = f"AIDT_Weekly_{datetime.now().strftime('%Y%m%d')}.html"
+                    html_content = generate_newsletter(api_key, issue_number, custom_success_story if use_custom_success else None)
+                    filename = f"중부_ATDT_Weekly_{issue_number}호_{datetime.now().strftime('%Y%m%d')}.html"
                     
                     st.success("✅ 뉴스레터가 성공적으로 생성되었습니다!")
                     st.markdown(create_download_link(html_content, filename), unsafe_allow_html=True)
                     
-                    # 미리보기 표시 (iframe 사용) - HTML 태그가 그대로 보이는 문제 수정
+                    # 미리보기 표시 (iframe 사용)
                     st.subheader("생성된 뉴스레터")
                     
                     # HTML 특수 문자 처리와 Content-Security-Policy 추가
