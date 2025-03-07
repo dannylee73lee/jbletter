@@ -63,7 +63,7 @@ def generate_newsletter(api_key, custom_success_story=None, issue_num=1, highlig
     prompts = {
         'main_news': f"""
         AIDT Weekly 뉴스레터의 '주요 소식' 섹션을 생성해주세요.
-        최근 한달 이내의 최신 소식만 다루어 주세요. 오늘 날짜는 {date}입니다.
+        오늘 날짜는 {date}입니다. {date}로부터 정확히 한 달 전부터 {date}까지의 기간에 발생한 최신 소식만 다루어 주세요.
         형식:
         
         ## [주제]의 [핵심 강점/특징]은 [주목할만합니다/확인됐습니다/중요합니다].
@@ -89,8 +89,10 @@ def generate_newsletter(api_key, custom_success_story=None, issue_num=1, highlig
         간략한 내용을 1-2문장으로 작성하세요. 기술이나 서비스의 출시 예정일이나 영향력을 언급하세요.
         각 소식 사이에 충분한 공백을 두어 가독성을 높여주세요.
         
-        모든 주제는 반드시 최근 한달 이내의 실제 소식이어야 합니다. 가상의 정보나 사실이 아닌 내용은 절대 포함하지 마세요.
+        모든 주제는 반드시 {date}로부터 한 달 전 이후에 발생한 실제 소식이어야 합니다. 그 이전의 소식이나 가상의 정보는 절대 포함하지 마세요.
         정확한 출처와 실제 발생한 소식만 포함해야 합니다. 모든 소식에는 반드시 원본 출처 링크를 마크다운 형식 [제목](URL)으로 제공하세요.
+        
+        소식의 발생 시점을 명확히 표시하여 한 달 이내의 소식임을 확인할 수 있도록 해주세요.
         """,
         'aidt_tips': """
         AIDT Weekly 뉴스레터의 'AI 활용 팁' 섹션을 생성해주세요.
@@ -372,7 +374,7 @@ def create_download_link(html_content, filename):
     return href
 
 def main():
-    st.title("AIDT 뉴스레터 생성기")
+    st.title("중부Infra AT/DT 뉴스레터 생성기")
     st.write("GPT-4를 활용하여 AI 디지털 트랜스포메이션 관련 뉴스레터를 자동으로 생성합니다.")
     
     # OpenAI API 키 입력
