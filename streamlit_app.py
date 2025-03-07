@@ -289,7 +289,7 @@ def generate_newsletter(api_key, custom_success_story=None):
     <body>
         <div class="container">
             <div class="header">
-                <div class="title">중부Infra AI/DT Weekly</div>
+                <div class="title">중부Infra AT/DT Weekly</div>
                 <div class="issue-info">제{issue_number}호 | {date}</div>
             </div>
             
