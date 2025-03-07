@@ -80,6 +80,24 @@ def generate_newsletter(openai_api_key, news_api_key, news_query, language="en",
     
     date = datetime.now().strftime('%Y년 %m월 %d일')
     issue_number = issue_num
+
+    # 현재 주차 계산 (이슈 번호를 주차로 사용)
+    current_week = issue_num
+    
+    # AI 팁 주제 데이터베이스 - 여러 주제를 순환하여 제공
+    ai_tip_topics = [
+        "효과적인 프롬프트 작성의 기본 원칙 (Chain of Thought, Chain of Draft)",
+        "특정 업무별 최적의 프롬프트 템플릿",
+        "AI를 활용한 데이터 분석 프롬프트 기법",
+        "창의적 작업을 위한 AI 프롬프트 전략",
+        "AI와 협업하여 문제 해결하기",
+        "다양한 AI 도구 활용법 비교",
+        "업무 자동화를 위한 AI 프롬프트 설계",
+        "AI를 활용한 의사결정 지원 기법"
+    ]
+    
+    # 현재 주차에 해당하는 주제 선택 (순환)
+    current_topic = ai_tip_topics[(current_week - 1) % len(ai_tip_topics)]
     
     # 하이라이트 설정 기본값
     if highlight_settings is None:
@@ -133,21 +151,30 @@ def generate_newsletter(openai_api_key, news_api_key, news_query, language="en",
         모든 주제는 반드시 제공된 실제 뉴스 기사에서만 추출해야 합니다. 가상의 정보나 사실이 아닌 내용은 절대 포함하지 마세요.
         각 소식 사이에 충분한 공백을 두어 가독성을 높여주세요.
         """,
-        'aidt_tips': """
-        AIDT Weekly 뉴스레터의 'AI 활용 팁' 섹션을 생성해주세요.
-        형식:
+
+
+        'aidt_tips': f"""
+        AIDT Weekly 뉴스레터의 '이번 주 AIDT 팁' 섹션을 생성해주세요.
         
-        ## 이번 주 팁: 팁 제목
+        이번 주 팁 주제는 "{current_topic}"입니다.
         
-        팁에 대한 설명을 2-3문장으로 간결하게 작성해주세요.
+        이 주제에 대해 다음 형식으로 실용적인 팁을 작성해주세요:
         
-        **핵심 단계:**
-        - 첫 번째 단계
-        - 두 번째 단계
-        - 세 번째 단계
+        ## 이번 주 팁: [주제에 맞는 구체적인 팁 제목]
         
-        이 팁을 활용했을 때의 이점을 한 문장으로 작성해주세요.
+        팁에 대한 배경과 중요성을 2-3문장으로 간결하게 설명해주세요. AI 기본기와 관련된 내용을 포함하세요.
+        
+        **핵심 프롬프트 예시:**
+        - 첫 번째 프롬프트 템플릿 (구체적인 예시와 함께)
+        - 두 번째 프롬프트 템플릿 (구체적인 예시와 함께)
+        - 세 번째 프롬프트 템플릿 (구체적인 예시와 함께)
+        
+        이 팁을 활용했을 때의 업무 효율성 향상이나 결과물 품질 개선 등 구체적인 이점을 한 문장으로 작성해주세요.
+        
+        마지막에 "다음 주에는 다른 AI 기본기 팁을 알려드리겠습니다."라는 문장을 추가해주세요.
         """,
+
+        
         'success_story': """
         AIDT Weekly 뉴스레터의 '성공 사례' 섹션을 생성해주세요.
         한국 기업 사례 1개와 외국 기업 사례 1개를 생성해야 합니다.
