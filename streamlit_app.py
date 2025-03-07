@@ -52,8 +52,9 @@ def generate_newsletter(api_key, custom_success_story=None):
     issue_number = 1
     
     prompts = {
-        'main_news': """
+        'main_news': f"""
         AIDT Weekly 뉴스레터의 '주요 소식' 섹션을 생성해주세요.
+        최근 1주일 이내의 최신 소식만 다루어 주세요. 오늘 날짜는 {date}입니다.
         형식:
         
         ## [주제]의 [핵심 강점/특징]은 [주목할만합니다/확인됐습니다/중요합니다].
@@ -76,6 +77,8 @@ def generate_newsletter(api_key, custom_success_story=None):
         
         간략한 내용을 1-2문장으로 작성하세요. 기술이나 서비스의 출시 예정일이나 영향력을 언급하세요.
         각 소식 사이에 충분한 공백을 두어 가독성을 높여주세요.
+        
+        모든 주제는 반드시 최근 1주일 이내의 소식이어야 합니다.
         """,
         'aidt_tips': """
         AIDT Weekly 뉴스레터의 'AI 활용 팁' 섹션을 생성해주세요.
@@ -294,6 +297,10 @@ def generate_newsletter(api_key, custom_success_story=None):
             </div>
             
             <div class="content">
+                <div class="newsletter-intro">
+                    <p>중부Infra AT/DT 뉴스레터는 모두가 AI발전 속도에 뒤쳐지지 않고 업무에 적용할 수 있도록 가장 흥미로운 AI 활용법을 전합니다.</p>
+                </div>
+                
                 <div class="highlight-box">
                     <div class="highlight-title">지피터스 AI 스터디 15기 오픈</div>
                     <div class="highlight-subtitle">AI, 어떻게 시작할지 막막하다면?</div>
@@ -394,7 +401,7 @@ def main():
             with st.spinner("뉴스레터 생성 중... (약 1-2분 소요될 수 있습니다)"):
                 try:
                     html_content = generate_newsletter(api_key, custom_success_story if use_custom_success else None)
-                    filename = f"AIDT_Weekly_{datetime.now().strftime('%Y%m%d')}.html"
+                    filename = f"중부 ATDT Weekly-제{issue_number}호.html"
                     
                     st.success("✅ 뉴스레터가 성공적으로 생성되었습니다!")
                     st.markdown(create_download_link(html_content, filename), unsafe_allow_html=True)
